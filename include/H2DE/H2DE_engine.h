@@ -31,6 +31,7 @@ class H2DE_Engine {
 private:
     int fps;
     H2DE_Size size;
+    H2DE_Size minSize = { -1, -1 };
     H2DE_Size maxSize = { -1, -1 };
     bool isRunning = true;
     SDL_Renderer* renderer;
@@ -68,6 +69,12 @@ private:
      * \since H2DE-1.0.0
      */
     void importFiles(const fs::path& dir);
+    /**
+     * Imports a file
+     * \param file file
+     * \since H2DE-1.3.10
+     */
+    void importFile(const fs::path& file);
     /**
      * Imports a texture from a png file
      * \param img png file
@@ -165,6 +172,13 @@ public:
      */
     friend void H2DE_LoadAssets(H2DE_Engine* engine, const fs::path& dir);
     /**
+     * Loads an asset
+     * \param engine a pointer to an engine
+     * \param file file
+     * \since H2DE-1.3.10
+     */
+    friend void H2DE_LoadAsset(H2DE_Engine* engine, const fs::path& file);
+    /**
      * Adds a graphic object to be rendered this frame
      * \param engine a pointer to an engine
      * \param g a pointer the graphic object
@@ -210,6 +224,21 @@ public:
      * \since H2DE-1.0.5
      */
     friend H2DE_Size H2DE_GetEngineMaximumSize(H2DE_Engine* engine);
+    /**
+     * Sets the minimum size for the specified engine
+     * \param engine a pointer to an engine
+     * \param w maxmum width for the engine
+     * \param h maxmum height for the engine
+     * \since H2DE-1.0.5
+     */
+    friend void H2DE_SetEngineMinimumSize(H2DE_Engine* engine, int w, int h);
+    /**
+     * Gets the minimum size for the specified engine
+     * \param engine a pointer to an engine
+     * \return the minimum size of the engine
+     * \since H2DE-1.0.5
+     */
+    friend H2DE_Size H2DE_GetEngineMinimumSize(H2DE_Engine* engine);
     /**
      * Gets the FPS on an engine
      * \param engine a pointer to an engine

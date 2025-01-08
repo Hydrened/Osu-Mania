@@ -25,22 +25,18 @@ private:
     bool isRunning = true;
     std::filesystem::path mainFolder;
     GameData* data = new GameData();
-    // Calculator* calculator;
 
     Settings* settings = nullptr;
     Menu* menu = nullptr;
     Beatmap* beatmap = nullptr;
     GameState state = MAIN_MENU;
 
+    std::vector<SDL_Keycode> keys;
+
     void createWindow();
     void initMainFolder();
-
-    void openMenu();
-    void closeMenu();
-    
-    void loadBeatmap(char* file);
-    void openBeatmap(std::filesystem::path difficulty);
-    void closeBeatmap();
+    void loadKeys();
+    void importBeatmap(char* file);
 
 public:
     Game(int argc, char** argv);
@@ -53,14 +49,19 @@ public:
     void update();
     void render();
 
+    void openMenu();
+    void closeMenu();
+
+    void openBeatmap(std::filesystem::path beatmap);
+    void closeBeatmap();
+
     static void delay(int ms, std::function<void()> callback);
 
     GameData* getData() const;
     H2DE_Engine* getEngine() const;
     int getFPS() const;
-    // Calculator* getCalculator() const;
-    // Beatmap* getBeatmap() const;
-    // GameState getState() const;
+    GameState getState() const;
+    Settings* getSettings() const;
     std::filesystem::path getMainFolder();
 
     void setState(GameState state);

@@ -9,14 +9,13 @@ Game::Game(int argc, char** argv) {
 
     createWindow();
     initMainFolder();
+
     settings = new Settings(mainFolder / "settings.txt");
     int volume = std::stoi(settings->get("volume"));
     H2DE_SetSoundVolume(engine, -1, volume);
 
-    // calculator = new Calculator(this);
+    loadKeys();
     openMenu();
-    // openBeatmap("C:\\Users\\Ordi\\AppData\\Roaming\\Hydren Osu! Mania\\songs\\400078 Kurokotei - Galaxy Collapse\\Kurokotei - Galaxy Collapse (Mat) [Cataclysmic Hypernova].osu");
-    openBeatmap("C:\\Users\\Ordi\\AppData\\Roaming\\Hydren Osu! Mania\\songs\\1979161 -45 remixed by INNOCENT NOIZE - G e n g a o z o -Noize of Nocent-\\-45 remixed by INNOCENT NOIZE - G e n g a o z o -Noize of Nocent- (ade_maine) [Innocence 1.05x].osu");
 }
 
 void Game::createWindow() {
@@ -24,11 +23,14 @@ void Game::createWindow() {
         throw std::runtime_error("HOM-101: Error creating window => SDL_Init failed: " + std::string(SDL_GetError()));
     }
 
-    window = SDL_CreateWindow("Osu! Mania - 1.0.0", 0, 0, 1280, 720, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Osu! Mania - 1.0.1", 0, 0, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!window) {
         SDL_Quit();
         throw std::runtime_error("HOM-102: Error creating window => SDL_CreateWindow failed: " + std::string(SDL_GetError()));
     }
+    
+    int winWidth, winHeight;
+    SDL_GetWindowSize(window, &winWidth, &winHeight);
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
@@ -37,7 +39,7 @@ void Game::createWindow() {
         throw std::runtime_error("HOM-103: Error creating window => SDL_CreateRenderer failed: " + std::string(SDL_GetError()));
     }
 
-    engine = H2DE_CreateEngine(renderer, 1280, 720, FPS);
+    engine = H2DE_CreateEngine(renderer, winWidth, winHeight, FPS);
     if (!engine) {
         SDL_DestroyWindow(window);
         SDL_DestroyRenderer(renderer);
@@ -45,31 +47,48 @@ void Game::createWindow() {
         throw std::runtime_error("HOM-104: Error creating window => H2DE_CreateEngine failed");
     }
 
-    SDL_SetWindowMaximumSize(window, 1280, 720);
-    H2DE_SetEngineMaximumSize(engine, 1280, 720);
+    SDL_SetWindowGrab(window, SDL_TRUE);
+    SDL_SetWindowMinimumSize(window, winWidth, winHeight);
+    SDL_SetWindowMaximumSize(window, winWidth, winHeight);
+    H2DE_SetEngineMinimumSize(engine, winWidth, winHeight);
+    H2DE_SetEngineMaximumSize(engine, winWidth, winHeight);
 }
 
 void Game::initMainFolder() {
-    using namespace std::filesystem;
-    path local = std::getenv("APPDATA");
+    std::filesystem::path local = std::getenv("APPDATA");
 
     mainFolder = local / "Hydren Osu! Mania";
-    if (!exists(mainFolder)) {
-        if (!create_directory(mainFolder)) throw std::runtime_error("HOM-105: Error creating main folder");
+    if (!std::filesystem::exists(mainFolder)) {
+        if (!std::filesystem::create_directory(mainFolder)) throw std::runtime_error("HOM-105: Error creating main folder");
     }
 
-    path songsPath = mainFolder / "songs";
-    if (!exists(songsPath)) {
-        if (!create_directory(songsPath)) throw std::runtime_error("HOM-106: Error creating songs folder");
+    std::filesystem::path beatmapsPath = mainFolder / "beatmaps";
+    if (!std::filesystem::exists(beatmapsPath)) {
+        if (!std::filesystem::create_directory(beatmapsPath)) throw std::runtime_error("HOM-106: Error creating beatmap folder");
     }
 
-    path settingsPath = mainFolder / "settings.txt";
-    if (!exists(settingsPath)) {
+    std::filesystem::path settingsPath = mainFolder / "settings.txt";
+    if (!std::filesystem::exists(settingsPath)) {
         std::ofstream settings(settingsPath);
         if (settings) {
-            settings << "volume=100;" << std::endl;
+            settings <<
+                "volume=100;\n" <<
+                "speed=20;\n" <<
+                "key1=W;\n" <<
+                "key2=X;\n" <<
+                "key3=B;\n" <<
+                "key4=N;\n" <<
+            std::endl;
         } else throw std::runtime_error("HOM-107: Error creating settings file");
     }
+}
+
+void Game::loadKeys() {
+    keys.reserve(4);
+    keys.push_back(SDL_GetKeyFromName(settings->get("key1").c_str()));
+    keys.push_back(SDL_GetKeyFromName(settings->get("key2").c_str()));
+    keys.push_back(SDL_GetKeyFromName(settings->get("key3").c_str()));
+    keys.push_back(SDL_GetKeyFromName(settings->get("key4").c_str()));
 }
 
 // CLEANUP
@@ -112,20 +131,35 @@ void Game::run() {
 void Game::handleEvents(SDL_Event event) {
     while (SDL_PollEvent(&event)) switch (event.type) {
         case SDL_QUIT: quit(); break;
-        case SDL_KEYDOWN: switch (event.key.keysym.sym) {
-            case SDLK_ESCAPE: quit(); break;
-            default: break;
-        } break;
+
+        case SDL_KEYDOWN: 
+            if (state == BEATMAP_PLAYING) for (int i = 0; i < keys.size(); i++) {
+                if (event.key.keysym.sym == keys[i]) beatmap->inputDown(i);
+            } 
+            switch (event.key.keysym.sym) {
+                case SDLK_ESCAPE: quit(); break;
+                default: break;
+            } break;
+        
+        case SDL_KEYUP:
+            if (state == BEATMAP_PLAYING) for (int i = 0; i < keys.size(); i++) {
+                if (event.key.keysym.sym == keys[i]) beatmap->inputUp(i);
+            }
+            break;
+
         case SDL_DROPFILE: switch (state) {
-            case MAIN_MENU: loadBeatmap(event.drop.file); break;
+            case MAIN_MENU: importBeatmap(event.drop.file); break;
             default: break;
         } break;
+
         default: break;
     }
 }
 
 // MENU
 void Game::openMenu() {
+    if (menu != nullptr) return;
+    if (beatmap != nullptr) closeBeatmap();
     menu = new Menu(this);
 }
 
@@ -137,12 +171,10 @@ void Game::closeMenu() {
 }
 
 // BEATMAP
-void Game::loadBeatmap(char* file) {
-    using namespace std::filesystem;
-
-    path sourcePath = file;
+void Game::importBeatmap(char* file) {
+    std::filesystem::path sourcePath = file;
     std::string fileName = sourcePath.filename().string();
-    path destPath = mainFolder / "songs" / fileName.substr(0, fileName.length() - 4);
+    std::filesystem::path destPath = mainFolder / "songs" / fileName.substr(0, fileName.length() - 4);
     if (sourcePath.filename().extension() != ".osz") return;
 
     int id = -1;
@@ -157,7 +189,7 @@ void Game::loadBeatmap(char* file) {
     const char* extractDir = strExtractDir.c_str();
 
     if (!mz_zip_reader_init_file(&zip, zipFilePath, 0)) throw std::runtime_error("HOM-202: Error opening osz file");
-    if (!exists(destPath)) if (!create_directory(destPath)) throw std::runtime_error("HOM-108: Error creating beatmap folder");
+    if (!std::filesystem::exists(destPath)) if (!create_directory(destPath)) throw std::runtime_error("HOM-108: Error creating beatmap folder");
 
     int fileCount = (int)mz_zip_reader_get_num_files(&zip);
     for (int i = 0; i < fileCount; i++) {
@@ -166,7 +198,7 @@ void Game::loadBeatmap(char* file) {
             mz_zip_reader_get_filename(&zip, i, fileName, sizeof(fileName));
 
             std::string outputPath = std::string(extractDir) + "/" + fileName;
-            if (!exists(outputPath)) {
+            if (!std::filesystem::exists(outputPath)) {
                 if (!mz_zip_reader_extract_to_file(&zip, i, outputPath.c_str(), 0)) throw std::runtime_error("HOM-501: Error extracting file: " + std::string(fileName));
             }
         }
@@ -176,8 +208,10 @@ void Game::loadBeatmap(char* file) {
     SDL_free(file);
 }
 
-void Game::openBeatmap(std::filesystem::path difficulty) {
-    beatmap = new Beatmap(this, difficulty);
+void Game::openBeatmap(std::filesystem::path b) {
+    if (beatmap != nullptr) return;
+    if (menu != nullptr) closeMenu();
+    beatmap = new Beatmap(this, b);
 }
 
 void Game::closeBeatmap() { 
@@ -190,7 +224,7 @@ void Game::closeBeatmap() {
 // UPDATE
 void Game::update() {
     switch (state) {
-        case LEVEL_PLAYING: beatmap->update(); break;
+        case BEATMAP_PLAYING: beatmap->update(); break;
         default: break;
     }
 }
@@ -198,7 +232,7 @@ void Game::update() {
 // RENDER
 void Game::render() {
     switch (state) {
-        case LEVEL_PLAYING: beatmap->render(); break;
+        case BEATMAP_PLAYING: beatmap->render(); break;
         default: break;
     }
 }
@@ -224,17 +258,13 @@ int Game::getFPS() const {
     return FPS;
 }
 
-// Calculator* Game::getCalculator() const {
-//     return calculator;
-// }
+GameState Game::getState() const {
+    return state;
+}
 
-// Level* Game::getLevel() const {
-//     return level;
-// }
-
-// GameState Game::getState() const {
-//     return state;
-// }
+Settings* Game::getSettings() const {
+    return settings;
+}
 
 std::filesystem::path Game::getMainFolder() {
     return mainFolder;

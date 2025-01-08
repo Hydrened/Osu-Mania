@@ -3,10 +3,19 @@
 
 enum GameState {
     MAIN_MENU,
-    LEVEL_PLAYING,
-    LEVEL_DEAD,
-    LEVEL_PAUSE,
-    LEVEL_END,
+    BEATMAP_PLAYING,
+    BEATMAP_DEAD,
+    BEATMAP_PAUSE,
+    BEATMAP_END,
+};
+
+enum Judgment {
+    MARVELLOUS,
+    PERFECT,
+    GREAT,
+    GOOD,
+    OK,
+    MISS,
 };
 
 struct Rect {
