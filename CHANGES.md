@@ -4,6 +4,8 @@
 - keys in settings
 - key inputs
 - input detection to closest note with judgments
+#### LIB
+- updated H2DE from version 1.3.10 to 1.3.11
 
 ## HOM-1.0.0
 #### ADDED
