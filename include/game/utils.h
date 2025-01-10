@@ -18,6 +18,16 @@ enum Judgment {
     MISS,
 };
 
+struct BeatmapPos {
+    float x; 
+    float y; 
+};
+
+struct BeatmapSize {
+    float w; 
+    float h; 
+};
+
 struct Rect {
     float x, y, w, h;
 

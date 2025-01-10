@@ -11,8 +11,10 @@
 #include "data.h"
 #include "functions.h"
 #include "settings.h"
+#include "calculator.h"
 #include "menu.h"
 #include "beatmap.h"
+class Calculator;
 class Menu;
 class Beatmap;
 
@@ -26,6 +28,7 @@ private:
     std::filesystem::path mainFolder;
     GameData* data = new GameData();
 
+    Calculator* calculator = nullptr;
     Settings* settings = nullptr;
     Menu* menu = nullptr;
     Beatmap* beatmap = nullptr;
@@ -59,10 +62,12 @@ public:
 
     GameData* getData() const;
     H2DE_Engine* getEngine() const;
+    Calculator* getCalculator() const;
     int getFPS() const;
     GameState getState() const;
     Settings* getSettings() const;
     std::filesystem::path getMainFolder();
+    void getWinSize(int* width, int* height);
 
     void setState(GameState state);
 };

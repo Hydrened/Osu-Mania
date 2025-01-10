@@ -11,12 +11,23 @@ private:
     Game* game;
     std::filesystem::path beatmap;
 
+    H2DE_TimelineManager* tm = H2DE_CreateTimelineManager();
+
     int speed;
     std::string song;
-    Uint32 delay;
+    std::string bgPicture;
+    Uint8 bgOpacity;
+    Uint32 accDelay;
 
     std::vector<Note*> notes;
     std::unordered_set<Note*> pressedNotes;
+    std::vector<Note*> slidersHolding;
+    std::unordered_map<Note*, Judgment> sliderJudgments;
+    std::unordered_map<Judgment, int> judgments;
+
+    Judgment* thisFrameJudgment = nullptr;
+    Judgment* currentJudgment = nullptr;
+    float currentJudgmentScale = 1.0f;
 
     std::vector<bool> keysDown = { false, false, false, false };
     std::vector<int> keyPressedThisFrame;
@@ -24,10 +35,17 @@ private:
 
     void loadSettings();
     void loadSong();
+    void loadBgPicture();
     void loadNotes();
 
+    void addJudgment(Judgment judgment);
     Note* getClosestNote(int time, int key);
     Judgment getJudgment(int delay);
+
+    void renderBackground();
+    void renderColumn();
+    void renderNotes();
+    void renderJudgment();
 
 public:
     Beatmap(Game* game, std::filesystem::path beatmap);

@@ -10,9 +10,11 @@ Game::Game(int argc, char** argv) {
     createWindow();
     initMainFolder();
 
+    calculator = new Calculator(this);
     settings = new Settings(mainFolder / "settings.txt");
     int volume = std::stoi(settings->get("volume"));
     H2DE_SetSoundVolume(engine, -1, volume);
+    H2DE_LoadAssets(engine, "assets");
 
     loadKeys();
     openMenu();
@@ -78,6 +80,7 @@ void Game::initMainFolder() {
                 "key2=X;\n" <<
                 "key3=B;\n" <<
                 "key4=N;\n" <<
+                "bg_opacity=50;\n" <<
             std::endl;
         } else throw std::runtime_error("HOM-107: Error creating settings file");
     }
@@ -254,6 +257,10 @@ H2DE_Engine* Game::getEngine() const {
     return engine;
 }
 
+Calculator* Game::getCalculator() const {
+    return calculator;
+}
+
 int Game::getFPS() const {
     return FPS;
 }
@@ -268,6 +275,10 @@ Settings* Game::getSettings() const {
 
 std::filesystem::path Game::getMainFolder() {
     return mainFolder;
+}
+
+void Game::getWinSize(int* width, int* height) {
+    SDL_GetWindowSize(window, width, height);
 }
 
 // SETTER
