@@ -18,4 +18,4 @@ wl:
 	$(CC) -std=$(CPP_VERSION) -m64 -mwindows -static-libgcc -static-libstdc++ -o $(BIN_DIR)/$(APP_NAME) $(SRC_DIR)/*.cpp -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/game -L$(LIB_DIR) -lmingw32 $(SDL_TAGS) -lH2DE -lminiz
 
 run:
-	cd $(BIN_DIR) && $(APP_NAME) -f 165
+	cd $(BIN_DIR) && $(APP_NAME) -f 240

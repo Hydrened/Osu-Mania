@@ -3,7 +3,7 @@
 // INIT
 Menu::Menu(Game* g) : game(g) {
     loadBeatmaps();
-    openBeatmap(400078, "Cataclysmic Hypernova");
+    openBeatmap(2102159, "Insane");
 }
 
 void Menu::loadBeatmaps() {

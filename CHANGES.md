@@ -1,3 +1,9 @@
+## HOM-1.0.3
+#### ADDED
+- note visuals
+#### FIXED
+- png files for beatmap background
+
 ## HOM-1.0.2
 #### ADDED
 - sliders

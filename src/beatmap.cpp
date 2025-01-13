@@ -45,7 +45,7 @@ void Beatmap::loadBgPicture() {
         std::ifstream difficultyFile(beatmap);
         std::string line;
         while (std::getline(difficultyFile, line)) {
-            size_t index = line.find(".jpg");
+            size_t index = (line.find(".jpg") != std::string::npos) ? line.find(".jpg") : line.find(".png");
             if (index == std::string::npos) continue;
 
             bgPicture = line.substr(5, index - 5 + 4);
@@ -201,7 +201,7 @@ void Beatmap::render() {
     renderBackground();
     renderColumn();
     renderNotes();
-    renderJudgment();
+    // renderJudgment();
 }
 
 void Beatmap::renderBackground() {
@@ -318,18 +318,38 @@ void Beatmap::renderColumn() {
 void Beatmap::renderNotes() {
     static H2DE_Engine* engine = game->getEngine();
     static Calculator* calculator = game->getCalculator();
+    static GameData* gameData = game->getData();
+    static int offset = gameData->offsets->beatmapStart;
+    static float pixelLostPerSpeed = gameData->others->pixelLostPerSpeed;
+    static H2DE_Size absNoteSize = calculator->convertToPx(gameData->sizes->note);
+    static float hitZone = gameData->offsets->hitZone;
 
+    int winWidth, winHeight;
+    game->getWinSize(&winWidth, &winHeight);
+    static int blockSize = static_cast<int>(winWidth / BLOCKS_ON_WIDTH);
 
-    // BeatmapPos pos = { 0.0f, 0.0f };
-    // BeatmapSize size = { 1.0f, 0.32f };
+    float pxPerMs = gameData->others->maxPixelPerMsSpeed - (40 - speed) * pixelLostPerSpeed;
+    int currentTime = SDL_GetTicks() - accDelay - offset;
 
-    // H2DE_GraphicObject* note = H2DE_CreateGraphicObject();
-    // note->type = IMAGE;
-    // note->pos = calculator->convertToPx(pos, size);
-    // note->size = calculator->convertToPx(size);
-    // note->texture = "mania-note1.png";
-    // note->index = 5;
-    // H2DE_AddGraphicObject(engine, note);
+    for (Note* note : notes) {
+        if (pressedNotes.find(note) != pressedNotes.end()) continue;
+        
+        int delay = note->start - currentTime;
+        int yAbsPos = (winHeight - delay * pxPerMs) - blockSize * hitZone;
+
+        if (yAbsPos >= winHeight) break;
+
+        std::string columnID = (note->column == 1 || note->column == 4) ? "1" : "2";
+        H2DE_Pos absNotePos = calculator->convertToPx({ note->column - 1.0f, 0.0f }, gameData->sizes->note);
+
+        H2DE_GraphicObject* graphicNote = H2DE_CreateGraphicObject();
+        graphicNote->type = IMAGE;
+        graphicNote->pos = { absNotePos.x, yAbsPos };
+        graphicNote->size = absNoteSize;
+        graphicNote->texture = "mania-note" + columnID + ".png";
+        graphicNote->index = 5;
+        H2DE_AddGraphicObject(engine, graphicNote);
+    }
 }
 
 void Beatmap::renderJudgment() {
